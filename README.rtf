@@ -14,7 +14,7 @@ sudo -H python src/main2.py --input graph/CIFAR1/KNNfromGgistAbsIEK.edgelist --o
 
 [Gemd] = EMD2Graph(G.emd,k)
 
-i.e.: [Wnormal,FSnormal] = EMD2Graph(strcat(path,’Normal',int2str(i),'.emd'),k);
+i.e.: [Gnormal,FSnormal] = EMD2Graph(strcat(path,’Normal',int2str(i),'.emd'),k);
 
 
 
@@ -25,6 +25,347 @@ Execute in Matlab (W is each directed graph.
 
 i.e.: [WeNormal{k,i}] = RRWnewD(Wnormal);
 
+
+
+Experiments:
+
+
+for i=1:44
+    for k=1:10
+    Lnormal{k,i} = Laplacian(Gnormal{k,i}); %From point 5
+    [Dn{k,i}] = eig(Lnormal{k,i});
+    ceros = Dn{k,i}(Dn{k,i}<0.001);
+    sgapN(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:52
+    for k=1:10
+    Learly{k,i} = Laplacian(Gearly{k,i});
+    [De{k,i}] = eig(Learly{k,i});
+    ceros = De{k,i}(De{k,i}<0.001);
+    sgapE(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:38
+    for k=1:10
+    Llate{k,i} = Laplacian(Glate{k,i});
+    [Dl{k,i}] = eig(Llate{k,i});
+    ceros = Dl{k,i}(Dl{k,i}<0.001);
+    sgapL(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:33
+    for k=1:10
+    Lad{k,i} = Laplacian(Gad{k,i});
+    [Da{k,i}] = eig(Lad{k,i});
+    ceros = Da{k,i}(Da{k,i}<0.001);
+    sgapA(k,i) = length(ceros); %Number of components
+    end
+end
+
+
+
+for i=1:44
+    for k=1:10
+        [WeNormal{k,i}] = RRWnew(Gnormal{k,i});
+        WeNormal{k,i} = removeNan(WeNormal{k,i});
+    end
+end
+
+
+%*************Experiments*****************+
+for i=1:47
+for k=1:10
+[WeEarly{k,i}] = RRWnewD(Gearly{k,i});
+WeEarly{k,i} = removeNan(WeEarly{k,i});
+end
+end
+
+for i=1:38
+for k=1:10
+GradoNormal{k,i} = diag(Degree(WeNormal{k,i}));
+HvNeumannNormal{k,i} = vonNeumannEntropy(WeNormal{k,i});
+end
+[~,ordenNormal{3,i}] = sort(GradoNormal{3,i});
+end
+for i=1:47
+for k=1:10
+GradoEarly{k,i} = diag(Degree(WeEarly{k,i}));
+HvNeumannEarly{k,i} = vonNeumannEntropy(WeEarly{k,i});
+end
+[~,ordenEarly{3,i}] = sort(GradoEarly{3,i});
+end
+for i=1:34
+for k=1:10
+GradoLate{k,i} = diag(Degree(WeLate{k,i}));
+end
+[~,ordenLate{3,i}] = sort(GradoLate{3,i});
+end
+for i=1:30
+for k=1:10
+GradoAd{k,i} = diag(Degree(WeAd{k,i}));
+end
+[~,ordenAd{3,i}] = sort(GradoAd{3,i});
+end
+
+%RANKING
+for i=1:38
+puntuacionN = rankVector(ordenNormal{3,i},puntuacionN);
+end
+for i=1:47
+puntuacionE = rankVector(ordenEarly{3,i},puntuacionE);
+end
+for i=1:34
+puntuacionL = rankVector(ordenLate{3,i},puntuacionL);
+end
+for i=1:30
+puntuacionA = rankVector(ordenAd{3,i},puntuacionA);
+end
+
+puntuacionN = puntuacionN./38;
+puntuacionE = puntuacionE./47;
+puntuacionL = puntuacionL./34;
+puntuacionA = puntuacionA./30;
+
+figure;
+for i=1:96
+subplot(10,10,i)
+bar([puntuacionN(i) puntuacionE(i) puntuacionL(i) puntuacionA(i)])
+end
+
+figure;
+for i=1:38
+    [inN{1,i},outN{1,i}] = inOutDegree(WeNormal{1,i});
+    diffN{1,i} = inN{1,i} - outN{1,i};
+    %plot(in,out,'r*')
+    %hold on
+end
+figure;
+for i=1:47
+    [inE{1,i},outE{1,i}] = inOutDegree(WeEarly{1,i});
+    diffE{1,i} = inE{1,i} - outE{1,i};
+end
+figure;
+for i=1:34
+    [inL{1,i},outL{1,i}] = inOutDegree(WeLate{1,i});
+    diffL{1,i} = inL{1,i} - outL{1,i};
+end
+figure;
+for i=1:30
+    [inA{1,i},outA{1,i}] = inOutDegree(WeAd{1,i});
+    diffA{1,i} = inA{1,i} - outA{1,i};    
+end
+
+meanDiffN = zeros(1,96);
+meanDiffE = zeros(1,96);
+meanDiffL = zeros(1,96);
+meanDiffA = zeros(1,96);
+for i=1:38
+    aux = diffN{1,i};
+    meanDiffN = meanDiffN + aux;
+end
+for i=1:47
+    aux = diffE{1,i};
+    meanDiffE = meanDiffE + aux;
+end
+for i=1:34
+    aux = diffL{1,i};
+    meanDiffL = meanDiffL + aux;
+end
+for i=1:30
+    aux = diffA{1,i};
+    meanDiffA = meanDiffA + aux;
+end
+meanDiffN = meanDiffN./38;
+meanDiffE = meanDiffE./47;
+meanDiffL = meanDiffL./34;
+meanDiffA = meanDiffA./30;
+
+
+for i=1:38
+    for k=1:10
+    Lnormal{k,i} = Laplacian(WeNormal{k,i});
+    [Dn{k,i}] = eig(Lnormal{k,i});
+    ceros = Dn{k,i}(Dn{k,i}<0.001);
+    sgapN(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:47
+    for k=1:10
+    Learly{k,i} = Laplacian(WeEarly{k,i});
+    [De{k,i}] = eig(Learly{k,i});
+    ceros = De{k,i}(De{k,i}<0.001);
+    sgapE(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:34
+    for k=1:10
+    Llate{k,i} = Laplacian(WeLate{k,i});
+    [Dl{k,i}] = eig(Llate{k,i});
+    ceros = Dl{k,i}(Dl{k,i}<0.001);
+    sgapL(k,i) = length(ceros); %Number of components
+    end
+end
+
+for i=1:30
+    for k=1:10
+    Lad{k,i} = Laplacian(WeAd{k,i});
+    [Da{k,i}] = eig(Lad{k,i});
+    ceros = Da{k,i}(Da{k,i}<0.001);
+    sgapA(k,i) = length(ceros); %Number of components
+    end
+end
+
+
+%FOR EACH PATIENT
+paciente = zeros(1,85);
+for i=1:38
+puntuacion = rankVector(ordenNormal{3,i},zeros(1,96));
+paciente(1,i) = abs(puntuacion(34) - puntuacion(82));
+paciente(2,i) = abs(puntuacion(34));
+paciente(3,i) = abs(puntuacion(82));
+end
+for i=1:47
+puntuacion = rankVector(ordenEarly{3,i},zeros(1,96));
+paciente(1,i+38) = abs(puntuacion(34) - puntuacion(82));
+paciente(2,i+38) = abs(puntuacion(34));
+paciente(3,i+38) = abs(puntuacion(82));
+end
+
+figure;
+for i=1:size(pairs,1)
+    i
+    subplot(size(pairs,1),size(pairs,2),2*(i-1)+1);
+    bar([abs(puntuacionN(pairs(i,1))-puntuacionN(pairs(i,2)));abs(puntuacionE(pairs(i,1))-puntuacionE(pairs(i,2)))]);
+    subplot(size(pairs,1),size(pairs,2),2*(i-1)+2);
+    bar([abs(puntuacionNO(pairs(i,1))-puntuacionNO(pairs(i,2)));abs(puntuacionEO(pairs(i,1))-puntuacionEO(pairs(i,2)))]);
+end
+
+figure;
+for i=1:size(pairs2,1)
+    i
+    subplot(size(pairs2,1),size(pairs2,2),2*(i-1)+1);
+    bar([abs(puntuacionNO(pairs(i,1))-puntuacionNO(pairs(i,2)));abs(puntuacionEO(pairs(i,1))-puntuacionEO(pairs(i,2)))]);    
+    subplot(size(pairs2,1),size(pairs2,2),2*(i-1)+2);
+    bar([abs(puntuacionN(pairs(i,1))-puntuacionN(pairs(i,2)));abs(puntuacionE(pairs(i,1))-puntuacionE(pairs(i,2)))]);
+end
+
+for i=1:38
+    puntuacion = rankVector(ordenNormal{3,i},zeros(1,96));
+    for j=1:size(pairs2,1)
+        paciente(j,i) = abs(puntuacion(pairs2(j,1)) - puntuacion(pairs2(j,2)));
+    end
+end
+for i=1:47
+    puntuacion = rankVector(ordenEarly{3,i},zeros(1,96));
+    for j=1:size(pairs2,1)
+        paciente(j,i+38) = abs(puntuacion(pairs2(j,1)) - puntuacion(pairs2(j,2)));
+    end
+end
+
+
+%*************IN/OUT DEGREE*********************
+for i=1:38
+    [WeN{1,i},Anormal{1,i}] = UpperValuesAndAdjacency(WeNormal{3,i},0.4);
+end
+for i=1:47
+    [WeE{1,i},Aearly{1,i}] = UpperValuesAndAdjacency(WeEarly{3,i},0.4);
+end
+for i=1:38
+    [inN{1,i},outN{1,i}] = inOutDegree(Anormal{1,i});
+    diffN{1,i} = inN{1,i} - outN{1,i};
+end
+for i=1:47
+    [inE{1,i},outE{1,i}] = inOutDegree(Aearly{1,i});
+    diffE{1,i} = inE{1,i} - outE{1,i};
+end
+
+
+
+
+
+Clasification:
+
+%Clasifier
+% % Generate example data: 2 groups, of 10 and 15, respectively
+%Clasificador por ROI
+X1=[];
+for i=1:38
+    aux = diffN{1,i};
+    Xaux=[];
+    for j=1:size(pairs2,1)
+        Xaux=[Xaux (aux(pairs2(j,1))) (aux(pairs2(j,2))) abs(aux(pairs2(j,1))-aux(pairs2(j,2)))];
+    end
+    X1 = [X1; Xaux];
+end
+X2=[];
+for i=1:47
+    aux = diffE{1,i};
+    Xaux=[];
+    for j=1:size(pairs2,1)
+        Xaux=[Xaux (aux(pairs2(j,1))) (aux(pairs2(j,2))) abs(aux(pairs2(j,1))-aux(pairs2(j,2)))];
+    end
+    X2 = [X2; Xaux];
+end
+X = [X1; X2];  Y = [zeros(38,1); ones(47,1)];
+%
+% % Calculate linear discriminant coefficients
+ W = LDA(X,Y);
+%
+% % Calulcate linear scores for training data
+ L = [ones(85,1) X] * W';
+%
+% % Calculate class probabilities
+ P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+ 
+t=0;
+for i=1:85
+    if (i<=38 && P(i,1)>=0.5) || (i>38 && P(i,2)>=0.5)
+        t=t+1;
+    end
+end
+t/85
+
+
+%10-FOLD CROSS VALIDATION
+X = [X1; X2];  
+Y = [zeros(38,1); ones(47,1)];
+subsets = randperm(85);
+for i=1:10
+    X = [X1; X2];
+    if i<=5
+        removeSubset = subsets([8*(i-1)+1:8*(i-1)+8]);
+    else
+        removeSubset = subsets([41+9*(i-6):49+9*(i-6)]);
+    end
+    X(removeSubset,:) = [];
+    n = 38
+    e = 47;
+    for j=1:size(removeSubset,2)
+        if(removeSubset(j)<=38)
+            n = n-1;
+        else
+            e = e-1;
+        end
+    end
+    Y = [zeros(n,1); ones(e,1)];
+    W = LDA(X,Y);
+    L = [ones(n+e,1) X] * W';
+    P = exp(L) ./ repmat(sum(exp(L),2),[1 2]);
+    t=0;
+    for j=1:(n+e)
+        if (j<=n && P(j,1)>=0.5) || (j>n && P(j,2)>=0.5)
+            t=t+1;
+        end
+    end
+    p(i)=t/(n+e)
+end
+mean(p)
 
 Another important functions.
 
